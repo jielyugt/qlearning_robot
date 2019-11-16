@@ -44,7 +44,8 @@ class QLearner(object):
         dyna = 0, \
         verbose = False):  		   	  			  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
-        self.verbose = verbose  		   	  			  	 		  		  		    	 		 		   		 		  
+        self.verbose = verbose  		
+        self.num_state = num_states   	  			  	 		  		  		    	 		 		   		 		  
         self.num_actions = num_actions  		   	  			  	 		  		  		    	 		 		   		 		  
         self.s = 0  		   	  			  	 		  		  		    	 		 		   		 		  
         self.a = 0  
@@ -54,7 +55,13 @@ class QLearner(object):
         self.gamma = gamma
         self.rar = rar
         self.radr = radr
-        self.q = np.zeros((num_states, num_actions)) 	  			  	 		  		  		    	 		 		   		 		  
+        self.dyna = dyna
+        self.q = np.zeros((num_states, num_actions)) 	 
+
+        if dyna > 0:
+            self.t = np.full((num_states, num_actions, num_states), 0.00001)
+            self.r = np.full((num_states, num_actions), 0) 		
+            self.history = {}	  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
     def querysetstate(self, s):  		   	  			  	 		  		  		    	 		 		   		 		  
         """  		   	  			  	 		  		  		    	 		 		   		 		  
@@ -87,6 +94,18 @@ class QLearner(object):
         self.q[self.s,self.a] = (1 - self.alpha) * self.q[self.s,self.a] + \
             self.alpha * (r + self.gamma * np.max(self.q[s_prime]))
 
+        # dyna
+        if self.dyna > 0:
+            self.history[self.s] = list(set().union(self.history.get(self.s, []), [self.a]))
+
+            # update T and R table
+            self.t[self.s,self.a, s_prime] += 1
+            self.r[self.s,self.a] = (1 - self.alpha) * self.r[self.s,self.a] + self.alpha * r
+
+            # halucinate experience
+            for _ in range(self.dyna):
+                self.halucinate()
+
         # choose the next action
         random = rand.random()
         if random < self.rar:
@@ -97,14 +116,36 @@ class QLearner(object):
         # update random action rate
         self.rar = self.rar * self.radr
 
+        if self.verbose:
+            print("last state: {}, last action: {}, new state: {}, reward: {}, action: {}".format(self.s,self.a,s_prime,r,action))
+
         # update the state and action
         self.s = s_prime
         self.a = action
 
-        if self.verbose:
-            print("last state: {}, last action: {}, new state: {}, reward: {}, action: {}".format(self.s,self.a,s_prime,r,action))
+        return action  
 
-        return action  		   	  			  	 		  		  		    	 		 		   		 		  
+    def halucinate(self):
+
+        # randomly choose a state and an action
+        s = rand.choice(list(self.history.keys()))
+        a = rand.choice(self.history[s])
+
+        # query into T for s_prime
+        total = np.sum(self.t[s,a])
+        prob = np.zeros(self.num_state)
+        for i in range(self.num_state):
+            prob[i] = self.t[s,a,i]
+        prob /= np.sum(prob)
+        s_prime = np.random.choice(range(self.num_state), p = prob)
+
+        # query into R for r
+        r = self.r[s,a]
+
+        # update Q
+        self.q[s,a] = (1 - self.alpha) * self.q[s,a] + \
+            self.alpha * (r + self.gamma * np.max(self.q[s_prime]))
+ 		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
 if __name__=="__main__":  		   	  			  	 		  		  		    	 		 		   		 		  
     print("Remember Q from Star Trek? Well, this isn't him")  		   	  			  	 		  		  		    	 		 		   		 		  
