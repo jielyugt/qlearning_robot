@@ -21,15 +21,18 @@ GT honor code violation.
   		   	  			  	 		  		  		    	 		 		   		 		  
 -----do not edit anything above this line---  		   	  			  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
-Student Name: Tucker Balch (replace with your name)  		   	  			  	 		  		  		    	 		 		   		 		  
-GT User ID: tb34 (replace with your User ID)  		   	  			  	 		  		  		    	 		 		   		 		  
-GT ID: 900897987 (replace with your GT ID)  		   	  			  	 		  		  		    	 		 		   		 		  
+Student Name: Jie Lyu 		   	  			  	 		  		  		    	 		 		   		 		  
+GT User ID: jlyu31  		   	  			  	 		  		  		    	 		 		   		 		  
+GT ID: 903329676  		   	  			  	 		  		  		    	 		 		   		 		  
 """  		   	  			  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
 import numpy as np  		   	  			  	 		  		  		    	 		 		   		 		  
 import random as rand  		   	  			  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
-class QLearner(object):  		   	  			  	 		  		  		    	 		 		   		 		  
+class QLearner(object):  	
+
+    def author(self):
+        return 'jlyu31'	  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
     def __init__(self, \
         num_states=100, \
@@ -44,17 +47,32 @@ class QLearner(object):
         self.verbose = verbose  		   	  			  	 		  		  		    	 		 		   		 		  
         self.num_actions = num_actions  		   	  			  	 		  		  		    	 		 		   		 		  
         self.s = 0  		   	  			  	 		  		  		    	 		 		   		 		  
-        self.a = 0  		   	  			  	 		  		  		    	 		 		   		 		  
+        self.a = 0  
+
+        # initialize hypermeters and the Q table
+        self.alpha = alpha
+        self.gamma = gamma
+        self.rar = rar
+        self.radr = radr
+        self.q = np.zeros((num_states, num_actions)) 	  			  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
     def querysetstate(self, s):  		   	  			  	 		  		  		    	 		 		   		 		  
         """  		   	  			  	 		  		  		    	 		 		   		 		  
         @summary: Update the state without updating the Q-table  		   	  			  	 		  		  		    	 		 		   		 		  
         @param s: The new state  		   	  			  	 		  		  		    	 		 		   		 		  
         @returns: The selected action  		   	  			  	 		  		  		    	 		 		   		 		  
-        """  		   	  			  	 		  		  		    	 		 		   		 		  
-        self.s = s  		   	  			  	 		  		  		    	 		 		   		 		  
-        action = rand.randint(0, self.num_actions-1)  		   	  			  	 		  		  		    	 		 		   		 		  
-        if self.verbose: print(f"s = {s}, a = {action}")  		   	  			  	 		  		  		    	 		 		   		 		  
+        """  		
+
+        # update the state   	  			  	 		  		  		    	 		 		   		 		  
+        self.s = s
+
+        # choose the next action
+        random = rand.random()
+        if random < self.rar:
+            action = rand.randint(0, self.num_actions - 1)
+        else:
+            action = np.argmax(self.q[s])		   	  			  	 		  		  		    	 		 		   		 		  
+		   	  			  	 		  		  		    	 		 		   		 		  
         return action  		   	  			  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
     def query(self,s_prime,r):  		   	  			  	 		  		  		    	 		 		   		 		  
@@ -64,8 +82,28 @@ class QLearner(object):
         @param r: The ne state  		   	  			  	 		  		  		    	 		 		   		 		  
         @returns: The selected action  		   	  			  	 		  		  		    	 		 		   		 		  
         """  		   	  			  	 		  		  		    	 		 		   		 		  
-        action = rand.randint(0, self.num_actions-1)  		   	  			  	 		  		  		    	 		 		   		 		  
-        if self.verbose: print(f"s = {s_prime}, a = {action}, r={r}")  		   	  			  	 		  		  		    	 		 		   		 		  
+        
+        # update the Q table
+        self.q[self.s,self.a] = (1 - self.alpha) * self.q[self.s,self.a] + \
+            self.alpha * (r + self.gamma * np.max(self.q[s_prime]))
+
+        # choose the next action
+        random = rand.random()
+        if random < self.rar:
+            action = rand.randint(0, self.num_actions - 1)
+        else:
+            action = np.argmax(self.q[s_prime])
+
+        # update random action rate
+        self.rar = self.rar * self.radr
+
+        # update the state and action
+        self.s = s_prime
+        self.a = action
+
+        if self.verbose:
+            print("last state: {}, last action: {}, new state: {}, reward: {}, action: {}".format(self.s,self.a,s_prime,r,action))
+
         return action  		   	  			  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
 if __name__=="__main__":  		   	  			  	 		  		  		    	 		 		   		 		  
