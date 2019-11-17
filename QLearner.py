@@ -63,7 +63,8 @@ class QLearner(object):
             self.seen = []
 
             self.t = np.full((num_states, num_actions, num_states), 0.00001)
-            self.r = np.zeros((num_states, num_actions)) 		
+            self.r = np.zeros((num_states, num_actions))
+            self.halucinate_history = [] 		
             self.history = {}	  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
     def querysetstate(self, s):  		   	  			  	 		  		  		    	 		 		   		 		  
@@ -108,6 +109,7 @@ class QLearner(object):
             # halucinate experience
             for _ in range(self.dyna):
                 self.halucinate()
+            self.halucinate_history = []
 
         # choose the next action
         random = rand.random()
@@ -134,8 +136,12 @@ class QLearner(object):
         s = rand.choice(list(self.history.keys()))
         a = rand.choice(self.history[s])
 
+        if (s,a) in self.halucinate_history:
+            return
+        
+        self.halucinate_history.append((s,a))
+
         # query into T for s_prime
-        # s_prime = np.random.choice(range(self.num_state), p = self.t[s,a]/np.sum(self.t[s,a]))
         s_prime = self.choice(range(self.num_state), self.t[s,a]/np.sum(self.t[s,a]))
 
         # query into R for r
