@@ -135,24 +135,26 @@ class QLearner(object):
         a = rand.choice(self.history[s])
 
         # query into T for s_prime
-        prob = np.zeros(self.num_state)
-        for i in range(self.num_state):
-            prob[i] = self.t[s,a,i]
-        
-        prob /= np.sum(prob)
-        s_prime = np.random.choice(range(self.num_state), p = prob)
-
-        # print(s,a,s_prime)
-        
+        # s_prime = np.random.choice(range(self.num_state), p = self.t[s,a]/np.sum(self.t[s,a]))
+        s_prime = self.choice(range(self.num_state), self.t[s,a]/np.sum(self.t[s,a]))
 
         # query into R for r
-
-        # WRONG
         r = self.r[s,a]
 
         # update Q
         self.q[s,a] = (1 - self.alpha) * self.q[s,a] + \
-            self.alpha * (r + self.gamma * np.max(self.q[s_prime]))  		    	 		 		   		 		  
-  		   	  			  	 		  		  		    	 		 		   		 		  
+            self.alpha * (r + self.gamma * np.max(self.q[s_prime]))  		  
+
+        # print(self.q)  
+
+    def choice(self, options, probs):
+        threshold = rand.random()
+        cum = 0
+        for i,p in enumerate(probs):
+            cum += p
+            if cum > threshold:
+                break
+        return options[i]	 		 		   		 		  
+                                                                                                
 if __name__=="__main__":  		   	  			  	 		  		  		    	 		 		   		 		  
     print("Remember Q from Star Trek? Well, this isn't him")  		   	  			  	 		  		  		    	 		 		   		 		  
