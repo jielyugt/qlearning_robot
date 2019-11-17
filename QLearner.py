@@ -59,8 +59,11 @@ class QLearner(object):
         self.q = np.zeros((num_states, num_actions)) 	 
 
         if dyna > 0:
+            # debug
+            self.seen = []
+
             self.t = np.full((num_states, num_actions, num_states), 0.00001)
-            self.r = np.full((num_states, num_actions), 0) 		
+            self.r = np.zeros((num_states, num_actions)) 		
             self.history = {}	  	 		  		  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
     def querysetstate(self, s):  		   	  			  	 		  		  		    	 		 		   		 		  
@@ -88,7 +91,7 @@ class QLearner(object):
         @param s_prime: The new state  		   	  			  	 		  		  		    	 		 		   		 		  
         @param r: The ne state  		   	  			  	 		  		  		    	 		 		   		 		  
         @returns: The selected action  		   	  			  	 		  		  		    	 		 		   		 		  
-        """  		   	  			  	 		  		  		    	 		 		   		 		  
+        """  		
         
         # update the Q table
         self.q[self.s,self.a] = (1 - self.alpha) * self.q[self.s,self.a] + \
@@ -101,7 +104,7 @@ class QLearner(object):
             # update T and R table
             self.t[self.s,self.a, s_prime] += 1
             self.r[self.s,self.a] = (1 - self.alpha) * self.r[self.s,self.a] + self.alpha * r
-
+            
             # halucinate experience
             for _ in range(self.dyna):
                 self.halucinate()
@@ -132,20 +135,24 @@ class QLearner(object):
         a = rand.choice(self.history[s])
 
         # query into T for s_prime
-        total = np.sum(self.t[s,a])
         prob = np.zeros(self.num_state)
         for i in range(self.num_state):
             prob[i] = self.t[s,a,i]
+        
         prob /= np.sum(prob)
         s_prime = np.random.choice(range(self.num_state), p = prob)
 
+        # print(s,a,s_prime)
+        
+
         # query into R for r
+
+        # WRONG
         r = self.r[s,a]
 
         # update Q
         self.q[s,a] = (1 - self.alpha) * self.q[s,a] + \
-            self.alpha * (r + self.gamma * np.max(self.q[s_prime]))
- 		  		    	 		 		   		 		  
+            self.alpha * (r + self.gamma * np.max(self.q[s_prime]))  		    	 		 		   		 		  
   		   	  			  	 		  		  		    	 		 		   		 		  
 if __name__=="__main__":  		   	  			  	 		  		  		    	 		 		   		 		  
     print("Remember Q from Star Trek? Well, this isn't him")  		   	  			  	 		  		  		    	 		 		   		 		  
